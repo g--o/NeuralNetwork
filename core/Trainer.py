@@ -1,10 +1,10 @@
 #### example of training methods
 
 import numpy as np
+from matplotlib import pyplot
 
 import DataSet
 import PerformanceFunction
-from matplotlib import pyplot
 
 DEFAULT_BACKPROP_LEARN_RATE = -0.1
 DEFAULT_BACKPROP_MAX_ITERS  = 1000
@@ -37,6 +37,7 @@ class Backpropagation(Trainer):
             last_layer_index = neural_network.num_layers-1
             last_layer = neural_network.l[last_layer_index]
             l_deltas[last_layer_index] = self.get_layer_deltas(neural_network, last_layer_index, prediction = data_output)
+            w_deltas[last_layer_index] = np.zeros_like(neural_network.w[last_layer_index])
             # propagate error
             for j in xrange(last_layer_index-1, -1, -1):
                 w_deltas[j] = self.get_weights_deltas(neural_network.l[j], l_deltas[j+1])
@@ -45,31 +46,33 @@ class Backpropagation(Trainer):
             # adjust weights
             neural_network.adjust_weights(w_deltas)
             # log errors
-            if i % self.max_iterations/3.0:
-                self.errors_log += [self.get_average_error(neural_network, data_output)]
+            self.errors_log += [self.get_average_error(neural_network, data_output)]
+            if i == 0:
+                self.debug_deltas = w_deltas
 
     def get_weights_deltas(self, layer, next_layer_deltas):
         return self.learn_rate * np.dot(layer.T, next_layer_deltas)
 
     def get_layer_deltas(self, neural_network, layer_index, next_layer_deltas = None, prediction = None):
-        if neural_network.num_layers-1 == layer_index: # last layer = output layer
+        if layer_index == neural_network.num_layers-1: # last layer = output layer
             layer = neural_network.l[layer_index]
-            return self.dperformance(prediction, layer) # * neural_network.dactivation(layer)
+            preactive_layer = np.dot(neural_network.l[layer_index-1], neural_network.w[layer_index-1])
+            return self.dperformance(prediction, layer) * neural_network.dactivation(preactive_layer)
         else: # hidden layer
             layer_weights = neural_network.w[layer_index]
-            layer = neural_network.l[layer_index]
-            return self.get_deltas(neural_network, layer, layer_weights, next_layer_deltas)
+            preactive_layer = np.dot(neural_network.l[layer_index-1], neural_network.w[layer_index-1])
+            return self.get_deltas(neural_network, preactive_layer, layer_weights, next_layer_deltas)
 
-    def get_deltas(self, neural_network, layer, layer_weights, next_layer_deltas):
+    def get_deltas(self, neural_network, preactive_layer, layer_weights, next_layer_deltas):
         if next_layer_deltas is None:
             print "ERROR: failed to get deltas - bad next_layer_deltas."
             return None
         transposed_weights = np.array(layer_weights).T
-        return np.dot(next_layer_deltas, transposed_weights) * neural_network.dactivation(layer)
+        return np.dot(next_layer_deltas, transposed_weights) * neural_network.dactivation(preactive_layer)
 
     def get_average_error(self, neural_network, prediction):
         last_layer = neural_network.l[neural_network.num_layers-1]
-        last_layer_err = prediction - last_layer
+        last_layer_err = self.performance(prediction, last_layer)
         return (np.mean(np.abs(last_layer_err)))
 
     def draw_error(self):
