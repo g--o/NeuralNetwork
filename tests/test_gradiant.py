@@ -1,6 +1,19 @@
 
 from config import *
 
+MAX_RATIO = 1e-08
+EPSILON = 1e-04
+grad_test_config = (5, 1, 1, -1, DEFAULT_ACTIVATION_FN)
+
+############### test configuration ###############
+inMatrix = np.array(([0,0],), dtype=np.float64)
+outMatrix = np.array(([0],), dtype=np.float64)
+# test data set
+DATA_SET = DataSet.DataSet(inMatrix, outMatrix)
+# dimentions = (node_size, num_nodes)
+INPUT_DIM = inMatrix.T.shape
+OUTPUT_DIM = outMatrix.T.shape
+
 def flatten(arr):
     result = []
     for arr in [y.flatten() for y in arr]:
@@ -8,9 +21,9 @@ def flatten(arr):
     return result
 
 def test_gradiant():
-    neural_network, trainer = create_training_setup(grad_test_config)
+    neural_network, trainer = create_training_setup(grad_test_config, INPUT_DIM, OUTPUT_DIM)
 
-    e = 1e-04
+    e = EPSILON
     numgrad = copy.deepcopy(neural_network.w)
 
     for i in xrange(len(numgrad)): # for each layer except last
@@ -30,10 +43,13 @@ def test_gradiant():
             numgrad[i][j] = np.array(numgrad[i][j]).ravel()
 
     # check Backpropagation gradiant
-    trainer.train(neural_network, DEFAULT_DATA_SET)
+    trainer.train(neural_network, DATA_SET)
 
     # calculate score - lower the better
     sub = flatten(np.array(trainer.debug_deltas) - np.array(numgrad))
     add = flatten(np.array(numgrad) + np.array(trainer.debug_deltas))
 
-    print np.linalg.norm(sub)/np.linalg.norm(add)
+    ratio = np.linalg.norm(sub)/np.linalg.norm(add)
+    print "maximum ratio: ", MAX_RATIO
+    print "ratio: ", ratio
+    print_result(ratio < MAX_RATIO)

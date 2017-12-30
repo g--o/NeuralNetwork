@@ -26,8 +26,9 @@ class Backpropagation(Trainer):
         """Train a neural network with data_set."""
         self.errors_log = []
         for i in xrange(self.max_iterations):
-            data_input = data_set.inputs
-            data_output = data_set.outputs
+            sample = data_set.getSample()
+            data_input = sample.inputs
+            data_output = sample.outputs
             # Reset calculated deltas
             l_deltas = neural_network.l[:]
             w_deltas = neural_network.w[:]

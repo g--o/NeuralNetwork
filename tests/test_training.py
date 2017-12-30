@@ -1,8 +1,11 @@
 
 from config import *
 
+MAX_ERR_FOR_CONFIG = 1e-03 # temporary until bias is fixed
+learning_config = simple_config
+
 def test_training():
-    config = experiment_config
+    config = learning_config
     # get setup
     neural_network, trainer = create_training_setup(config)
     # start training
@@ -14,7 +17,9 @@ def test_training():
     print neural_network.get_output()
     print "expected: "
     print outMatrix
-    print "error: ", trainer.get_average_error(neural_network, outMatrix)
+    err = trainer.get_average_error(neural_network, outMatrix)
+    print "error: ", err
+    print_result(err < MAX_ERR_FOR_CONFIG)
 
     # visual output
     if PLOT_NEURAL_NET:
