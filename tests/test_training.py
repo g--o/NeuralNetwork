@@ -26,4 +26,4 @@ def test_training():
         network = Visualizer.DrawNN([DEFAULT_INPUT_DIM[0]] + [config[0]]*config[1] + [DEFAULT_OUTPUT_DIM[0]])
         network.draw()
     if PLOT_ERROR_LOG:
-        trainer.draw_error()
+        draw_error()

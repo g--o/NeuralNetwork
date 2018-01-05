@@ -5,6 +5,7 @@ import numpy as np
 
 # Neural network core
 sys.path.append("core")
+sys.path.append("libs")
 import NeuralNetwork
 import Trainer
 import DataSet
@@ -49,3 +50,9 @@ def create_training_setup(config, input_dim = DEFAULT_INPUT_DIM, output_dim = DE
     print "Trainer initialized!"
 
     return neural_network, trainer
+
+def get_debug_deltas():
+    return Trainer.TrainerDebug.debug_deltas
+
+def draw_error():
+    Trainer.TrainerDebug.draw_error()

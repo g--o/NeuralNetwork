@@ -12,7 +12,9 @@ NUM_LEARN_TESTS = 1
 NUM_GRAD_TESTS = 1
 
 def main():
+    # print_testname("Primes Testing")
     # test_primes()
+
     print_testname("Gradient Testing")
     for i in xrange(NUM_GRAD_TESTS):
         test_gradiant()

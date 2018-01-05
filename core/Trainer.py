@@ -1,5 +1,6 @@
 #### example of training methods
 
+from abc import ABCMeta, abstractmethod
 import numpy as np
 from matplotlib import pyplot
 
@@ -9,8 +10,30 @@ import PerformanceFunction
 DEFAULT_BACKPROP_LEARN_RATE = -0.1
 DEFAULT_BACKPROP_MAX_ITERS  = 1000
 
-class Trainer(object):
-    pass
+class TrainerDebug:
+    enabled = True
+    errors_log = []
+    debug_deltas = None
+
+    @staticmethod
+    def draw_error():
+        pyplot.plot(TrainerDebug.errors_log)
+        pyplot.show()
+
+    @staticmethod
+    def update(iter, neural_network, w_deltas, data_output, error_fn):
+        if TrainerDebug.enabled:
+            # log errors
+            TrainerDebug.errors_log += [error_fn(neural_network, data_output)]
+            if iter == 0:
+                TrainerDebug.debug_deltas = w_deltas
+
+class Trainer:
+    __metaclass__ = ABCMeta
+
+    @abstractmethod
+    def train(self, neural_network, data_set):
+        pass
 
 class Backpropagation(Trainer):
     def __init__(self,  max_iterations = DEFAULT_BACKPROP_MAX_ITERS,
@@ -20,23 +43,21 @@ class Backpropagation(Trainer):
         self.learn_rate = learn_rate
         self.performance = performance_fn.performance
         self.dperformance = performance_fn.dperformance
-        self.errors_log = []
 
     def train(self, neural_network, data_set):
         """Train a neural network with data_set."""
-        self.errors_log = []
+        # Initialize deltas
+        l_deltas = neural_network.l[:]
+        w_deltas = neural_network.w[:]
+
         for i in xrange(self.max_iterations):
             sample = data_set.getSample()
             data_input = sample.inputs
             data_output = sample.outputs
-            # Reset calculated deltas
-            l_deltas = neural_network.l[:]
-            w_deltas = neural_network.w[:]
             # feed the data set
             neural_network.feed(data_input)
-            # get last layer error
+            # set deltas - get last layer error
             last_layer_index = neural_network.num_layers-1
-            last_layer = neural_network.l[last_layer_index]
             l_deltas[last_layer_index] = self.get_layer_deltas(neural_network, last_layer_index, prediction = data_output)
             w_deltas[last_layer_index] = np.zeros_like(neural_network.w[last_layer_index])
             # propagate error
@@ -46,22 +67,19 @@ class Backpropagation(Trainer):
                     l_deltas[j] = self.get_layer_deltas(neural_network, j, next_layer_deltas=l_deltas[j+1], prediction = data_output)
             # adjust weights
             neural_network.adjust_weights(w_deltas)
-            # log errors
-            self.errors_log += [self.get_average_error(neural_network, data_output)]
-            if i == 0:
-                self.debug_deltas = w_deltas
+            TrainerDebug.update(i, neural_network, w_deltas, data_output, self.get_average_error)
 
     def get_weights_deltas(self, layer, next_layer_deltas):
         return self.learn_rate * np.dot(layer.T, next_layer_deltas)
 
     def get_layer_deltas(self, neural_network, layer_index, next_layer_deltas = None, prediction = None):
+        preactive_layer = np.dot(neural_network.l[layer_index - 1], neural_network.w[layer_index - 1])
+
         if layer_index == neural_network.num_layers-1: # last layer = output layer
             layer = neural_network.l[layer_index]
-            preactive_layer = np.dot(neural_network.l[layer_index-1], neural_network.w[layer_index-1])
             return self.dperformance(prediction, layer) * neural_network.dactivation(preactive_layer)
         else: # hidden layer
             layer_weights = neural_network.w[layer_index]
-            preactive_layer = np.dot(neural_network.l[layer_index-1], neural_network.w[layer_index-1])
             return self.get_deltas(neural_network, preactive_layer, layer_weights, next_layer_deltas)
 
     def get_deltas(self, neural_network, preactive_layer, layer_weights, next_layer_deltas):
@@ -75,7 +93,3 @@ class Backpropagation(Trainer):
         last_layer = neural_network.l[neural_network.num_layers-1]
         last_layer_err = self.performance(prediction, last_layer)
         return (np.mean(np.abs(last_layer_err)))
-
-    def draw_error(self):
-        pyplot.plot(self.errors_log)
-        pyplot.show()

@@ -46,8 +46,9 @@ def test_gradiant():
     trainer.train(neural_network, DATA_SET)
 
     # calculate score - lower the better
-    sub = flatten(np.array(trainer.debug_deltas) - np.array(numgrad))
-    add = flatten(np.array(numgrad) + np.array(trainer.debug_deltas))
+    debug_deltas = np.array(get_debug_deltas())
+    sub = flatten(debug_deltas - np.array(numgrad))
+    add = flatten(np.array(numgrad) + debug_deltas)
 
     ratio = np.linalg.norm(sub)/np.linalg.norm(add)
     print "maximum ratio: ", MAX_RATIO

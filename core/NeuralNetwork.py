@@ -29,14 +29,14 @@ class NeuralNetwork(object):
     # Neural network class
 
     def __init__(self, input_dim, output_dim, hidden_width, num_layers, activation_fn = ActivationFunction.Sigmoid):
-        #np.random.seed(1)
+        # np.random.seed(1)
         self.l = create_layers(input_dim, output_dim, hidden_width, num_layers)
         self.w = create_weights(input_dim, output_dim, hidden_width, num_layers)
 
         self.activation_fn = activation_fn
         self.activation = activation_fn.activation #lambda x: [self.pre_activate(y) for y in x]
         self.dactivation = activation_fn.dactivation #lambda x: [self.pre_dactivate(y) for y in x]
-        self.num_layers = num_layers + 2 # account for input & ouput layers
+        self.num_layers = num_layers + 2 # account for input & output layers
 
     def pre_dactivate(self, x):
         if hasattr(x, "__len__"):
@@ -54,6 +54,7 @@ class NeuralNetwork(object):
         return self.activation(np.dot(layer, weights))
 
     def feed(self, inputs):
+        """ full forward propogation """
         self.l[0] = inputs
 
         for j in xrange(1, self.num_layers):
